@@ -47,7 +47,7 @@ export default function ExpensesScreen() {
       {/* Filter Chips */}
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false} 
         style={styles.filterContainer}
         contentContainerStyle={styles.filterContent}
       >
