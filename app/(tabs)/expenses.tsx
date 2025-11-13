@@ -1,9 +1,10 @@
+import { CustomAlert } from '@/components/CustomAlert';
 import { ExpenseCard } from '@/components/ExpenseCard';
 import { useExpenses } from '@/context/ExpenseContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { Category } from '@/types/expense';
 import React, { useState } from 'react';
 import {
-    Alert,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -14,6 +15,7 @@ import {
 
 export default function ExpensesScreen() {
   const { expenses, deleteExpense } = useExpenses();
+  const { alertConfig, visible, showAlert, handleConfirm, handleCancel } = useCustomAlert();
   const [selectedFilter, setSelectedFilter] = useState<Category | 'ALL'>('ALL');
 
   const filteredExpenses =
@@ -22,14 +24,34 @@ export default function ExpensesScreen() {
       : expenses.filter((exp) => exp.category === selectedFilter);
 
   const handleDelete = (id: string) => {
-    Alert.alert('Delete Expense', 'Are you sure you want to delete this expense?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => deleteExpense(id),
+    showAlert({
+      type: 'confirm',
+      title: 'Delete Expense',
+      message: 'Are you sure you want to delete this expense?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          await deleteExpense(id);
+          showAlert({
+            type: 'success',
+            title: 'Deleted!',
+            message: 'Expense has been deleted successfully',
+            confirmText: 'OK',
+            onConfirm: () => {},
+          });
+        } catch (error) {
+          showAlert({
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to delete expense',
+            confirmText: 'OK',
+            onConfirm: () => {},
+          });
+        }
       },
-    ]);
+      onCancel: () => {},
+    });
   };
 
   const filters: Array<Category | 'ALL'> = ['ALL', ...Object.values(Category)];
@@ -98,6 +120,20 @@ export default function ExpensesScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Custom Alert */}
+      {alertConfig && (
+        <CustomAlert
+          visible={visible}
+          type={alertConfig.type}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+          confirmText={alertConfig.confirmText}
+          cancelText={alertConfig.cancelText}
+        />
+      )}
     </SafeAreaView>
   );
 }

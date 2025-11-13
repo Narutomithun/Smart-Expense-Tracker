@@ -7,6 +7,7 @@ interface ExpenseContextType {
   addExpense: (expense: Omit<Expense, 'id' | 'createdAt'>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   updateExpense: (expense: Expense) => Promise<void>;
+  clearAllExpenses: () => Promise<void>;
   getTotalSpending: () => number;
   getSpendingByCategory: (category: Category) => number;
   isLoading: boolean;
@@ -64,6 +65,11 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     );
   };
 
+  const clearAllExpenses = async () => {
+    await storageService.clearAllExpenses();
+    setExpenses([]);
+  };
+
   const getTotalSpending = () => {
     return expenses.reduce((total, expense) => total + expense.amount, 0);
   };
@@ -79,6 +85,7 @@ export const ExpenseProvider: React.FC<ExpenseProviderProps> = ({ children }) =>
     addExpense,
     deleteExpense,
     updateExpense,
+    clearAllExpenses,
     getTotalSpending,
     getSpendingByCategory,
     isLoading,

@@ -1,12 +1,15 @@
+import { CustomAlert } from '@/components/CustomAlert';
 import { ExpenseCard } from '@/components/ExpenseCard';
 import { useExpenses } from '@/context/ExpenseContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { Category, CATEGORY_COLORS, CATEGORY_ICONS } from '@/types/expense';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
-  const { expenses, getTotalSpending, getSpendingByCategory, isLoading } = useExpenses();
+  const { expenses, getTotalSpending, getSpendingByCategory, isLoading, clearAllExpenses } = useExpenses();
+  const { alertConfig, visible: alertVisible, showAlert, handleConfirm: handleAlertConfirm, handleCancel: handleAlertCancel } = useCustomAlert();
   const [showScanner, setShowScanner] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -14,29 +17,35 @@ export default function HomeScreen() {
   const recentExpenses = expenses.slice(0, 5);
   const totalSpending = getTotalSpending();
 
-  const clearAllExpenses = async () => {
-    Alert.alert(
-      'Clear All Expenses',
-      'Are you sure you want to delete all expenses? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete All',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Import storage service
-              const { storageService } = await import('@/utils/storage');
-              await storageService.clearAllExpenses();
-              // Force reload by clearing context (this will trigger a re-fetch)
-              Alert.alert('Success', 'All expenses have been deleted');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to clear expenses');
-            }
-          },
-        },
-      ]
-    );
+  const handleClearAll = async () => {
+    showAlert({
+      type: 'confirm',
+      title: 'Clear All Expenses',
+      message: 'Are you sure you want to delete all expenses? This action cannot be undone.',
+      confirmText: 'Delete All',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          await clearAllExpenses();
+          showAlert({
+            type: 'success',
+            title: 'Success!',
+            message: 'All expenses have been deleted',
+            confirmText: 'OK',
+            onConfirm: () => {},
+          });
+        } catch (error) {
+          showAlert({
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to clear expenses',
+            confirmText: 'OK',
+            onConfirm: () => {},
+          });
+        }
+      },
+      onCancel: () => {},
+    });
   };
 
   const openScanner = async () => {
@@ -189,7 +198,7 @@ export default function HomeScreen() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Spending by Category</Text>
               {expenses.length > 0 && (
-                <TouchableOpacity onPress={clearAllExpenses} style={styles.clearButton}>
+                <TouchableOpacity onPress={handleClearAll} style={styles.clearButton}>
                   <Text style={styles.clearButtonText}>🗑️ Clear All</Text>
                 </TouchableOpacity>
               )}
@@ -229,6 +238,20 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Custom Alert */}
+      {alertConfig && (
+        <CustomAlert
+          visible={alertVisible}
+          type={alertConfig.type}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          onConfirm={handleAlertConfirm}
+          onCancel={handleAlertCancel}
+          confirmText={alertConfig.confirmText}
+          cancelText={alertConfig.cancelText}
+        />
+      )}
     </SafeAreaView>
   );
 }

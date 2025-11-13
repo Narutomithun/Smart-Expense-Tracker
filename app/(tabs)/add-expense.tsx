@@ -1,11 +1,12 @@
 import { Button } from '@/components/Button';
 import { CategoryPicker } from '@/components/CategoryPicker';
+import { CustomAlert } from '@/components/CustomAlert';
 import { Input } from '@/components/Input';
 import { useExpenses } from '@/context/ExpenseContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { Category } from '@/types/expense';
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -17,6 +18,7 @@ import {
 
 export default function AddExpenseScreen() {
   const { addExpense } = useExpenses();
+  const { alertConfig, visible, showAlert, handleConfirm, handleCancel } = useCustomAlert();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<Category>(Category.FOOD);
@@ -58,9 +60,21 @@ export default function AddExpenseScreen() {
       setDate(new Date().toISOString().split('T')[0]);
       setErrors({});
 
-      Alert.alert('Success', 'Expense added successfully!');
+      showAlert({
+        type: 'success',
+        title: 'Success!',
+        message: 'Expense added successfully!',
+        confirmText: 'OK',
+        onConfirm: () => {},
+      });
     } catch (error) {
-      Alert.alert('Error', 'Failed to add expense. Please try again.');
+      showAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to add expense. Please try again.',
+        confirmText: 'OK',
+        onConfirm: () => {},
+      });
     }
   };
 
@@ -120,6 +134,20 @@ export default function AddExpenseScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Custom Alert */}
+      {alertConfig && (
+        <CustomAlert
+          visible={visible}
+          type={alertConfig.type}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+          confirmText={alertConfig.confirmText}
+          cancelText={alertConfig.cancelText}
+        />
+      )}
     </SafeAreaView>
   );
 }
